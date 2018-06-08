@@ -1,0 +1,379 @@
+
+using namespace std;
+
+plik .h
+
+class drzewo_genealogiczne
+{
+private:
+
+    struct member
+    {
+        char plec;
+        string name;
+        int precise = 0;
+        string partner;
+        string imie_ojca;
+        string imie_matki;
+        bool ma_rodzica = false;
+        bool ma_partnera = false;
+        vector<string> potomkowie;
+    };
+
+    class family_mem
+    {
+    private:
+        char plec;
+        string name;
+        string imie_ojca;
+        string imie_matki;
+        string partner_name;
+        int highest_precision;
+        bool ma_partnera = false;
+        bool ma_rodzica = false;
+        family_mem * mama = nullptr;
+        family_mem * tata = nullptr;
+        family_mem * partner = nullptr;
+        std::vector<family_mem*> dzieci;
+
+    public:
+        family_mem(const string&n,
+                   bool _ma_rodzica,
+                   const std::string& imieojca,
+                   const std::string& imiematki) : name(n),
+                                                   ma_rodzica(_ma_rodzica)
+        {
+            if(ma_rodzica)
+            {
+                imie_ojca = imieojca;
+                imie_matki = imiematki;
+            }
+        }
+        family_mem(const string &n,bool _ma_partnera,
+                   bool _ma_rodzica,
+                   const std::string &imie_partnera,
+                   const std::string& imieojca,
+                   const std::string& imiematki,
+                   char pl,
+                   int highest_prec) : name(n),
+                                       plec(pl),
+                                       ma_partnera(_ma_partnera),
+                                       ma_rodzica(_ma_rodzica),
+                                       highest_precision(highest_prec)
+
+        {
+            if(ma_partnera)
+            {
+                this->partner_name = imie_partnera;
+            }
+            if(ma_rodzica)
+            {
+                imie_ojca = imieojca;
+                imie_matki = imiematki;
+            }
+        }
+        ~family_mem()
+        {
+            delete mama;
+            delete tata;
+            delete partner;
+        }
+        void set_member(const vector<family_mem*>& fam_members)
+        {
+            if(ma_partnera)
+            {
+                for(const auto &x : fam_members)
+                {
+                    if(partner_name == x->ret_name())
+                    {
+                        this->partner = x;
+                    }
+                }
+            }
+            if(ma_rodzica)
+            {
+                for(const auto &x: fam_members)
+                {
+                    if(imie_matki == x->ret_name())
+                    {
+                        mama = x;
+                    }
+                    if(imie_ojca == x->ret_name())
+                    {
+                        tata = x;
+                    }
+                }
+            }
+            for(const auto &x:  fam_members)
+            {
+                if(name == x->ret_dad() || name == x->ret_mama())
+                {
+                    dzieci.push_back(x);
+                }
+            }
+        }
+        vector<string> find_level(const family_mem *m,int poziom_pokrewienstwa, int obecny_poziom = 0) const
+        {
+            vector<string> temp_imiona;
+            auto poziom = obecny_poziom;
+            if(poziom == poziom_pokrewienstwa)
+            {
+                for(const auto &x: m->dzieci)
+                {
+                    temp_imiona.push_back(x->ret_name());
+                }
+                return temp_imiona;
+            } else
+            {
+                for(const auto &x : m->dzieci)
+                {
+                    auto vec = find_level(x,poziom_pokrewienstwa,obecny_poziom + 1);
+                    for(const auto &y : vec)
+                    {
+                        temp_imiona.push_back(y);
+                    }
+                }
+                return temp_imiona;
+            }
+
+        }
+        const string ret_name() const { return this->name;}
+        const string ret_mama() const { return this->imie_matki;}
+        const string  ret_dad() const { return this->imie_ojca;}
+    };
+
+
+    ifstream is;
+    vector<member> fam_mem;
+    vector<member> main_parents;
+    vector<family_mem*> all_members;
+    pair<family_mem*,family_mem*> proto;
+
+    void get_member(const string &str);
+    void add_childs();
+
+public:
+    explicit drzewo_genealogiczne(const string &path)
+    {
+        is.open(path);
+    }
+    ~drzewo_genealogiczne()
+    {
+        if(is)
+        {
+            is.close();
+        }
+    }
+    void init_read_tree();
+    void init_have_parent();
+    void init_partners();
+    void znajdz_prawnuki();
+    /*/
+     *
+     *  debugujac mozna zobaczyc pelna strukture drzewa
+     *
+     *  nalezy uzwac postaci relacji bez spacji gdyz program
+     *  czytajacy dane zawiedzie:
+     *  (Adam,o,Katarzyna) zamiast  (Adam , o, Katarzyna)
+     */
+};
+
+
+
+plik .cpp
+
+void drzewo_genealogiczne::get_member(const string &str)
+{
+    string name_,relacja,potomek;
+    auto pos1 = str.find(',');
+    auto pos2 = str.find_last_of(',');
+    member m;
+    m.name = str.substr(1,pos1 - 1);
+
+    if(str[pos1 + 1] == 'm')
+    {
+        m.plec = 'm';
+        m.precise++;
+    } else
+    {
+        m.plec = 'o';
+        m.precise++;
+    }
+    auto item = str;
+    item.pop_back();
+    m.potomkowie.push_back(item.substr(pos2 + 1));
+
+    this->fam_mem.push_back(m);
+
+}
+
+void drzewo_genealogiczne::init_read_tree()
+{
+    std::string temp;
+    while(is >> temp)
+    {
+        get_member(temp);
+    }
+
+}
+
+void drzewo_genealogiczne::init_partners()
+{
+    for(int x = 0; x < fam_mem.size() ;x++)
+    {
+        member m = fam_mem[x];
+        for(int y = 0; y < fam_mem.size() ;y++)
+        {
+            if(fam_mem[y].name == m.name && fam_mem[y].precise > m.precise)
+            {
+                m = fam_mem[y];
+            }
+        }
+        bool added = false;
+        for(auto &y : all_members)
+        {
+            if (m.name == y->ret_name())
+            {
+                added = true;
+            }
+        }
+        if(!added)
+        {
+            auto new_parent = new family_mem(m.name,
+                                             m.ma_partnera,
+                                             m.ma_rodzica,
+                                             m.partner,
+                                             m.imie_ojca,
+                                             m.imie_matki,
+                                             m.plec,
+                                             m.precise);
+            all_members.push_back(new_parent);
+        }
+    }
+    add_childs();
+    for(auto &x: all_members)
+    {
+        x->set_member(all_members);
+    }
+    for(const auto &x : all_members)
+    {
+        if(main_parents[0].name == x->ret_name())
+        {
+            proto.first = x;
+
+        }
+        if(main_parents[1].name == x->ret_name())
+        {
+            proto.second = x;
+        }
+    }
+}
+
+void drzewo_genealogiczne::init_have_parent()
+{
+    for( auto&x : fam_mem)
+    {
+        for(auto &y : fam_mem)
+        {
+            if(x.name == y.potomkowie[0])
+            {
+                x.ma_rodzica = true;
+                x.precise++;
+                if(y.plec == 'm')
+                {
+                    x.imie_matki = y.name;
+                    x.precise++;
+                }
+                if(y.plec == 'o')
+                {
+                    x.imie_ojca = y.name;
+                    x.precise++;
+                }
+            }
+        }
+    }
+    for(auto &x : fam_mem)
+    {
+        for(auto &y : fam_mem)
+        {
+            if( x.plec != y.plec && y.potomkowie[0] == x.potomkowie[0])
+            {
+                x.ma_partnera = y.ma_partnera = true;
+                x.partner = y.name;
+                y.partner = x.name;
+                x.precise++;
+            }
+        }
+    }
+    string last_printeddad;
+    string last_printedmum;
+    for(const auto &x : fam_mem)
+    {
+        for(const auto &y : fam_mem)
+        {
+            if(x.partner == y.name && y.partner == x.name && !y.ma_rodzica && !x.ma_rodzica && x.name != last_printeddad && x.name != last_printedmum )
+            {
+                this->main_parents.push_back(x);
+                this->main_parents.push_back(y);
+                last_printeddad = x.name;
+                last_printedmum = y.name;
+            }
+        }
+    }
+}
+
+void drzewo_genealogiczne::add_childs()
+{
+    for (const auto &x : fam_mem)
+    {
+        if (x.ma_partnera)
+        {
+            member m;
+            bool is = true;
+            m.name = x.potomkowie[0];
+            if(x.plec == 'm')
+            {
+                m.imie_matki = x.name;
+                m.imie_ojca =  x.partner;
+            }
+            if(x.plec == 'o')
+            {
+                m.imie_matki = x.partner;
+                m.imie_ojca = x.name;
+
+            }
+
+            for (const auto &y : all_members)
+            {
+                if (m.name == y->ret_name())
+                {
+                    is = false;
+                }
+            }
+            if (is)
+            {
+                m.ma_rodzica = true;
+                this->all_members.push_back(new family_mem(m.name,m.ma_rodzica,m.imie_ojca,m.imie_matki));
+            }
+        }
+    }
+}
+
+void drzewo_genealogiczne::znajdz_prawnuki()
+{
+    vector<string> vec;
+    for(const auto &x : all_members)
+    {
+        if(main_parents[0].name == x->ret_name())
+        {
+            vec = x->find_level(x,2);
+            break;
+        }
+    }
+
+    for (auto const &x : vec)
+    {
+        cout << x << endl;
+    }
+
+}

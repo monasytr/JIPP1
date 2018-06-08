@@ -1,0 +1,61 @@
+// Zadanie4.cpp : Defines the entry point for the console application.
+//
+
+#include "stdafx.h"
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <list>
+#include <algorithm>
+
+bool compareNocase(const std::string& first, const std::string& second)
+{
+	unsigned int i = 0;
+	while ((i<first.length()) && (i<second.length()))
+	{
+		if (tolower(first[i])<tolower(second[i])) return true;
+		else if (tolower(first[i])>tolower(second[i])) return false;
+		++i;
+	}
+	return (first.length() < second.length());
+}
+
+int main()
+{
+	std::string filename = "Q:\\slowa.txt";
+	std::fstream file;
+	std::string word;
+	std::vector<std::list<std::string>> wordsVector(10);
+	std::list<std::string> randomList;
+
+	file.open(filename);
+	while (!file.eof())
+	{
+		file >> word;
+		if (word.size() < 10) {
+			//std::transform(word.begin(), word.end(), word.begin(), ::tolower);
+			wordsVector[word.size()].push_back(word);
+		}
+	}
+
+	do {
+		randomList = wordsVector[5];
+	} while (!randomList.size());
+
+	std::cout << "Lista przed posortowaniem:" << std::endl;
+	for (std::list<std::string>::iterator iterator = randomList.begin(); iterator != randomList.end(); iterator++) {
+		std::cout << *iterator << " ";
+	}
+	std::cout << std::endl;
+
+	randomList.sort(compareNocase);
+
+	std::cout << "Lista po posortowaniu" << std::endl;
+	for (std::list<std::string>::iterator iterator = randomList.begin(); iterator != randomList.end(); iterator++) {
+		std::cout << *iterator << " ";
+	}
+
+	std::cout << std::endl;
+
+}

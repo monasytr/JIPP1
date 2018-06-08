@@ -1,0 +1,12 @@
+Z kiwi 40 200
+Z banany 10 400
+Z ananas 5 500
+Z kiwi 50 200
+S
+W banany 5
+W kiwi 45
+S
+- banany
+S
+O
+S

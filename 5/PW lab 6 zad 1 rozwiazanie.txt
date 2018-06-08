@@ -1,0 +1,172 @@
+// ConsoleApplica.cpp : Defines the entry point for the console application.
+//
+#include "stdafx.h"
+#include <iostream>
+#include <stdlib.h>
+#include <ctime>
+using namespace std;
+
+template <typename T>
+class Vector {
+private:
+	int dimensions;
+	T* data;
+public:
+	Vector<T>(int dimensions) {
+		if (dimensions <= 0) {
+			cout << "pisze" << endl;
+			if (data) delete[] this->data;
+			cout << "pisze" << endl;
+			throw 0;
+		}
+		else {
+			this->dimensions = dimensions; 
+			data = new T[dimensions]();
+		}
+	}
+	virtual ~Vector<T>() {
+		if (data) delete[] data;
+	}
+	Vector<T>(const Vector<T>& v) {
+		this->dimensions = v.size();
+		this->data = new T[dimensions]();
+		for (int i = 0; i < dimensions; i++)
+			this->data[i] = v[i];
+	}
+	Vector<T>& operator = (const Vector<T>& v) {
+		this->dimensions = v.size();
+		delete[] this->data;
+		this->data = new T[dimensions]();
+		for (int i = 0; i < dimensions; i++)
+			this->data[i] = v[i];
+		return *this;
+	}
+	int size() const {
+		return dimensions;
+	}
+	T& at(int index) {
+		if (index >= size())
+			throw 1;
+		else
+			return data[index];
+	}
+	const T& at(int index) const {
+		if (index >= size()) 
+			throw 1;
+		else
+			return data[index];
+	}
+	T& operator [](int index) {
+		if (index >= size())
+			throw 1;
+		else
+			return data[index];
+	}
+	const T& operator [](int index) const {
+		if (index >= size())
+			throw 1;
+		else
+			return data[index];
+	}
+	friend ostream& operator<< (ostream& o, Vector<T>& v) {
+		for (int i = 0; i < v.dimensions; i++)
+			o << v[i] << "  ";
+		return o;
+	}
+};
+
+template<typename T>
+Vector<T> add(const Vector<T>& a, const Vector<T>& b) {
+	if (a.size() != b.size())
+		throw 2;
+	else {
+		Vector<T> c(a.size());
+		for (int i = 0; i < a.size(); i++) {
+			c[i] = a[i] + b[i];
+		}
+		return c;
+	}
+}
+template<typename T>
+Vector<T> operator +(const Vector<T>& a, const Vector<T>& b) {
+	if (a.size() != b.size())
+		throw 2;
+	else {
+		Vector<T> c(a.size());
+		for (int i = 0; i < a.size(); i++) {
+			c[i] = a[i] + b[i];
+		}
+		return c;
+	}
+}
+template<typename T>
+Vector<T> operator -(const Vector<T>& a, const Vector<T>& b) {
+	if (a.size() != b.size())
+		throw 2;
+	else {
+		Vector<T> c(a.size());
+		for (int i = 0; i < a.size(); i++) {
+			c[i] = a[i] - b[i];
+		}
+		return c;
+	}
+}
+template<typename T>
+bool equals(const Vector<T>& a, const Vector<T>& b) {
+	if (&a == &b) return true;
+	if (a.size() != b.size())
+		return false;
+	for (int i = 0; i < a.size(); i++) {
+		if (a[i] != b[i]) return false;
+	}
+	return true;
+}template<typename T>
+bool operator ==(const Vector<T>& a, const Vector<T>& b) {
+	if (&a == &b) return true;
+	if (a.size() != b.size())
+		return false;
+	for (int i = 0; i < a.size(); i++) {
+		if (a[i] != b[i]) return false;
+	}
+	return true;
+}template<typename T>
+bool operator !=(const Vector<T>& a, const Vector<T>& b) {
+	if (&a == &b) return false;
+	else if (a.size() != b.size()) return true;
+	else {
+		for (size_t i = 0; i < a.size(); i++)
+			if (a[i] != b[i]) return true;
+	}
+	return false;
+}
+int main() {
+	srand(time(nullptr));
+	int n;
+	cout << "Podaj rozmiar wektora V1: ";
+	try {
+		cin >> n;
+		Vector<int> v1(n);
+		for (int i = 0; i < n; i++)
+			v1[i] = rand() % 100;
+		cout << "V1: " << v1 << endl << endl;
+		cout << "Ktory element V1 chcesz wyswietlic? (od 0 do " << (n - 1) << ") ";
+		cin >> n;
+		cout << n << "-ty element V1 to: " << v1[n] << endl << endl;
+		cout << "Podaj rozmiar wektora V2: ";
+		cin >> n;		Vector<int> v2(n);
+		for (int i = 0; i < n; i++)
+			v2[i] = rand() % 100;
+		cout << "V2: " << v2 << endl << endl;
+		cout << "V1 + V2: " << (v1 + v2) << endl;
+		cout << "V1 - V2: " << (v1 - v2) << endl;
+		cin.ignore(2);
+	}
+	catch (int p) {
+		if (p == 0) cout << "Rozmiar macierzy musi byc liczba dodatnia" << endl;
+		else if (p == 1) cout << "Podany indeks nie miesci w zakresie tablicy" << endl;
+		else if (p==2) cout<< "Macierze maja niejednakowe rozmiary" << endl;
+	}
+	
+	getchar();
+	return 0;
+}

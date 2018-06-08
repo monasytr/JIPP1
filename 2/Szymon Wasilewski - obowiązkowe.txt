@@ -1,0 +1,94 @@
+#include "stdafx.h"
+#include <iostream>
+#include <chrono>
+#include <random>
+
+void bubbleSort(float tab[], int n) {
+	for (int i = 0; i < n - 1; i++)
+		for (int j = 0; j < n - i - 1; j++)
+			if (tab[j] > tab[j + 1])
+				std::swap(tab[j], tab[j + 1]);
+}
+
+void heap(float tab[], int n, int i) {
+	auto largest = i;
+	auto l = 2 * i + 1;
+	auto r = 2 * i + 2;
+	if (l < n && tab[l] > tab[largest]) largest = l;
+	if (r < n && tab[r] > tab[largest]) largest = r;
+	if (largest != i) {
+		std::swap(tab[i], tab[largest]);
+		heap(tab, n, largest);
+	}
+}
+
+void heapSort(float tab[], int n) {
+	for (int i = n / 2 - 1; i >= 0; i--)
+		heap(tab, n, i);
+	for (int i = n - 1; i >= 0; i--) {
+		std::swap(tab[0], tab[i]);
+		heap(tab, i, 0);
+	}
+}
+
+int partition(float tab[], int left, int right) {
+	int pivot = tab[right];
+	int i = (left - 1);
+	for (int j = left; j <= right - 1; j++) {
+		if (tab[j] <= pivot) {
+			i++;
+			std::swap(tab[i], tab[j]);
+		}
+	}
+	std::swap(tab[i + 1], tab[right]);
+	return (i + 1);
+}
+
+void quickSort(float tab[], int left, int right) {
+	if (left < right) {
+		int pivot = partition(tab, left, right);
+		quickSort(tab, left, pivot - 1);
+		quickSort(tab, pivot + 1, right);
+	}
+}
+
+void quickSort(float tab[], int n) {
+	quickSort(tab, 0, n - 1);
+}
+
+float randomFloat(int a, int b) {
+	long long seed = std::chrono::system_clock::now().time_since_epoch().count();
+	static std::default_random_engine g(seed);
+	std::uniform_real_distribution<float> d(a, b);
+	return d(g);
+}
+
+double pomiar(int times, float *data, void(*sort)(float[], int)) {
+	double x = 0;
+	for (int i = 0; i < times; i++) {
+		float tab[300];
+		for (int i = 0; i < 300; i++)
+			tab[i] = data[i];
+		auto start = std::chrono::system_clock::now();
+		sort(tab, 300);
+		auto end = std::chrono::system_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end - start;
+		x += elapsed_seconds.count();
+	}
+	x /= times;
+	return x;
+}
+
+int main() {
+	float data[300];
+	for (int i = 0; i < 300; i++)
+		data[i] = randomFloat(0, 1000);
+	double bubble = pomiar(1000, data, bubbleSort);
+	double heap = pomiar(1000, data, heapSort);
+	double quick = pomiar(1000, data, quickSort);
+	std::cout << "BA" << "\t" << bubble << std::endl;
+	std::cout << "ST" << "\t" << heap << std::endl;
+	std::cout << "SZ" << "\t" << quick << std::endl;
+	system("pause");
+    return 0;
+}

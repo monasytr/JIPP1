@@ -1,0 +1,164 @@
+#############################################################################
+Sort.h
+#############################################################################
+#pragma once
+#include <iostream>
+#include <utility>
+#include <cstdlib>
+#include <vector>
+#include <time.h>
+#include <Windows.h>
+typedef void(*sort)(std::vector<float>&);
+void bubbleSort(std::vector<float> &d);
+void heapSort(std::vector<float> &d);
+void quickSort(std::vector<float> &d);
+void qst(std::vector<float> &d, float l, float p);
+
+class Sort
+{
+	std::vector<std::vector<float>> bubbleData;
+	std::vector<std::vector<float>> heapData;
+	std::vector<std::vector<float>> quickData;
+	sort bubble = bubbleSort;
+	sort heap = heapSort;
+	sort quick = quickSort;
+
+public:
+	Sort();
+	~Sort();
+	void print(std::vector<float> &d);
+	double pomiar(std::vector<std::vector<float>> &d, sort function);
+	void results();
+};
+
+#############################################################################
+Sort.h
+#############################################################################
+#include "stdafx.h"
+#include "Sort.h"
+
+void bubbleSort(std::vector<float> &d)
+{
+	bool flag = true;
+	do
+	{
+		flag = true;
+		for (int j = 0; j < d.size() - 1; j++)
+		{
+			if (d[j] > d[j + 1])
+			{
+				std::swap(d[j], d[j + 1]);
+				flag = false;
+			}
+		}
+	} while (!flag);
+}
+void heapSort(std::vector<float> &d)
+{
+	int s = d.size();
+	d.push_back(0);
+	std::swap(d[0], d[s]);
+	float j, k, x;
+	for (float i = 2; i < s; i++)
+	{
+		j = i;
+		k = j / 2;
+		x = d[i];
+		while ((k > 0) && (d[k] < x))
+		{
+			d[j] = d[k];
+			j = k;
+			k = j / 2;
+		}
+		d[j] = x;
+	}
+	for (float i = s; i > 1; i--)
+	{
+		std::swap(d[1], d[i]);
+		j = 1;
+		k = 2;
+		while (k < i)
+		{
+			if ((k + 1 < i) && (d[k + 1] > d[k])) x = k + 1;
+			else x = k;
+			if (d[x] <= d[j]) break;
+			std::swap(d[j], d[x]);
+			j = x;
+			k = j + j;
+		}
+	}
+	d.push_back(d[0]);
+	d.erase(d.begin());
+	d.erase(d.begin());
+}
+void quickSort(std::vector<float> &d)
+{
+	qst(d, 0, d.size()-1);
+}
+void qst(std::vector<float> &d, float l, float p)
+{
+	float i, j, piwot;
+	i = (l + p) / 2;
+	piwot = d[i];
+	d[i] = d[p];
+	for (j = i = l; i < p; i++)
+	{
+		if (d[i] < piwot)
+		{
+			std::swap(d[i], d[j]);
+			j++;
+		}
+	}
+	d[p] = d[j];
+	d[j] = piwot;
+	if (l < j - 1) qst(d, l, j - 1);
+	if (j + 1 < p) qst(d, j + 1, p);
+}
+
+
+
+Sort::Sort()
+{
+	srand(time(0));
+	std::vector<float> temp(300);
+	for (int i = 0; i < 1000; i++)
+	{
+		for (int j = 0; j < 300; j++)
+		{
+			temp[j] = rand() % 1001;
+		}
+		bubbleData.push_back(temp);
+	}
+	heapData = quickData = bubbleData;
+}
+Sort::~Sort()
+{
+}
+double Sort::pomiar(std::vector<std::vector<float>> &d, sort function)
+{
+	clock_t start, stop;
+	start = clock();
+
+	for (int i = 0; i < d.size(); i++)
+	{
+		function(d[i]);
+	}
+
+	stop = clock();
+	return ((stop - start) / (double)CLOCKS_PER_SEC);
+}
+void Sort::print(std::vector<float> &d)
+{
+	for (int i = 0; i < d.size(); i++)
+	{
+		std::cout << d[i] << ", ";
+	}
+	std::cout << std::endl;
+}
+void Sort::results()
+{
+	std::cout << "=== Czas sredni ===" << std::endl;
+	std::cout << "Bubblesort: " << pomiar(bubbleData, bubble) << " ms" << std::endl;
+	std::cout << "Heapsort: " << pomiar(heapData, heap) << " ms" << std::endl;
+	std::cout << "Quicksort: " << pomiar(quickData, quick) << " ms" << std::endl;
+}

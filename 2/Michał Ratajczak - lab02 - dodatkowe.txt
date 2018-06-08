@@ -1,0 +1,242 @@
+sortowanie:
+http://eduinf.waw.pl/inf/alg/003_sort/0015.php
+
+
+###################################################################################
+FamilyTree.h
+###################################################################################
+
+#pragma once
+#include <iostream>
+#include <string>
+#include <vector>
+#include <fstream>
+#include <array>
+using namespace std;
+
+struct Person
+{
+	string name;
+	vector<Person*> parents;
+	vector<Person*> childs;
+
+	Person(string n)
+	{
+		this->name = n;
+	}
+};
+
+ostream& operator << (ostream& stream, Person *p);
+
+class FamilyTree
+{
+	vector<Person*> family;
+	vector<array<string, 2>> list;
+	array<Person*, 2> familyAncestors;
+
+	int findPerson(string name);
+	bool checkParent(Person* p, string name);
+	bool checkChild(Person *p, string name);
+
+public:
+
+	FamilyTree();
+	~FamilyTree();
+	Person* getFamilyAncestor();
+	void completeRelationships();
+	void printGeneration(Person *p, int x);
+	void readData();
+	void printFamily();
+	void printList();
+};
+
+###################################################################################
+FamilyTree.cpp
+###################################################################################
+#include "stdafx.h"
+#include "FamilyTree.h"
+
+
+FamilyTree::FamilyTree()
+{
+}
+
+FamilyTree::~FamilyTree()
+{
+}
+
+int FamilyTree::findPerson(string name) //zwraca index osoby na liście rodziny
+{
+	int x = 0;
+	while (name != family[x]->name)x++;
+	return x;
+}
+bool FamilyTree::checkParent(Person* p, string name)//zwraca prawde, gdy osoba o wskazanym  imieniu jest na liście rodziców
+{
+	if (p->parents.size() > 0)
+	{
+		for (int i = 0; i < p->parents.size(); i++)
+		{
+			if (name == p->parents[i]->name)return true;
+		}
+	}
+	return false;
+}
+bool FamilyTree::checkChild(Person *p, string name)//zwraca prawde, gdy osoba o wskazanym  imieniu jest na liście dzieci
+{
+	if (p->childs.size() > 0)
+	{
+		for (int i = 0; i < p->childs.size(); i++)
+		{
+			if (name == p->childs[i]->name)return true;
+		}
+	}
+	return false;
+}
+void FamilyTree::completeRelationships()
+{
+	for (int i = 0; i < family.size(); i++)//wybiera osobe z rodziny
+	{
+		for (int j = 0; j < list.size(); j++)//przeszukuje liste relacji
+		{
+			if (family[i]->name == list[j][0])//sprawdza czy osoba jest rodzicem
+			{
+				int x = findPerson(list[j][1]);//sprawdza index dziecka w rodzinie
+				if(!checkChild(family[i],list[j][1]))//sprawdza czy dziecko jest już na liście dzieci
+					family[i]->childs.push_back(family[x]);//jeśli nie to je dodaje
+			}
+			if (family[i]->name == list[j][1])//sprawdza czy osoba jest dzieckiem
+			{
+				int x = findPerson(list[j][0]);//sprawdza index rodzica w rodzinie
+				if (!checkParent(family[i], list[j][0]))//sprawdza czy rodzic jest już na liście dzieci
+					family[i]->parents.push_back(family[x]);//jeśli nie to go dodaje
+			}
+		}
+	}
+	for (int i = 0; i < family.size(); i++)//wyznaczanie przodków rodziny
+	{
+		for (int j = 0; j < family.size(); j++)
+		{
+			if (family[i]->parents.empty() && family[j]->parents.empty() && i != j)//jeśli osoby nie ma rodziców
+			{
+				int z = 0;
+				for (int x = 0; x < family[i]->childs.size(); x++)//i mają te same dzieci
+				{
+					if (family[i]->childs[x]->name != family[j]->childs[x]->name) break;
+					else z++;
+				}
+				if (z == family[i]->childs.size())
+				{
+					familyAncestors[0] = family[i];//są przodkami rodziny
+					familyAncestors[1] = family[j];
+				}
+			}
+		}
+	}
+}
+void FamilyTree::printGeneration(Person *p, int x)//wyświetla wszystkie osoby z rodziny z podanego pokolenia
+{
+	if (x == 0)
+	{
+		cout << p->name << " ";
+	}
+	for (int i = 0; i < p->childs.size(); i++)
+	{
+		printGeneration(p->childs[i], x - 1);
+	}
+}
+void FamilyTree::readData()
+{
+	ifstream file;
+	file.open("dane.txt");
+	if (file.good())
+	{
+		string line;
+		while (getline(file,line))
+		{
+			string parent, child;
+			int i;
+			for (i = 1; i < line.length(); i++)
+			{
+				if (line[i] == 44) break;
+				parent += line[i];				
+			}
+			for (i += 5; i < line.length(); i++)
+			{
+				if (line[i] == 41) break;
+				child += line[i];
+			}
+			array<string, 2> tempArray;
+			tempArray[0] = parent;
+			tempArray[1] = child;
+			list.push_back(tempArray);
+			if (family.size() == 0)
+			{
+				Person *tempP = new Person(parent);
+				Person *tempC = new Person(child);
+				family.push_back(tempP);
+				family.push_back(tempC);
+				continue;
+			}
+			else
+			{
+				int lp = 0, lc = 0, j;
+				for (j = 0; j < family.size(); j++)
+				{
+					if (family[j]->name == parent)lp--;
+					else lp++;
+					if (family[j]->name == child)lc--;
+					else lc++;
+				}
+				if (j == lp)
+				{
+					Person *tempP = new Person(parent);
+					family.push_back(tempP);
+				}
+				if (j == lc)
+				{
+					Person *tempC = new Person(child);
+					family.push_back(tempC);
+				}
+			}
+		}
+	}
+	file.close();
+}
+void FamilyTree::printFamily()
+{
+	for (int i = 0; i < family.size(); i++)
+	{
+		cout << family[i] << endl;
+	}
+}
+void FamilyTree::printList()
+{
+	for (int i = 0; i < list.size(); i++)
+	{
+		cout << list[i][0] << " " << list[i][1] << endl;
+	}
+}
+ostream & operator<<(ostream & stream, Person * p)
+{
+	if (p)
+	{
+		stream << "Name: " << p->name << endl;
+		stream << "Parents: ";
+		for (int i = 0; i < p->parents.size();i++)
+		{
+			stream << p->parents[i]->name << " ";
+		}
+		stream << endl << "Childs: ";
+		for (int i = 0; i < p->childs.size(); i++)
+		{
+			stream << p->childs[i]->name << " ";
+		}
+		stream << endl;
+	}
+	return stream;
+}
+Person* FamilyTree::getFamilyAncestor()
+{
+	return familyAncestors[0];
+}
